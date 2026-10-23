@@ -10,24 +10,12 @@ This file does not name a provider.
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from typing import Literal
 
-# The repo root has to be importable before helpers can load.
-_here = Path(__file__).resolve()
-for _candidate in (_here, *_here.parents):
-    if (_candidate / "pyproject.toml").exists() and (_candidate / "helpers").is_dir():
-        _root = str(_candidate)
-        if _root not in sys.path:
-            sys.path.insert(0, _root)
-        break
-else:
-    raise SystemExit("Could not find the repo root (pyproject.toml and helpers/).")
-
 from pydantic import BaseModel
-
-from helpers.llm_call import structured
 
 from STEP2_read_pdf import PdfReadError, read_pdf
 
@@ -57,14 +45,65 @@ class TargetEvaluation(BaseModel):
     reason: str
 
 
+def _load_local_env() -> None:
+    """Read a .env above this file when the laptop has one. Render has none."""
+    try:
+        from dotenv import load_dotenv
+    except ModuleNotFoundError:
+        return
+    here = Path(__file__).resolve()
+    for candidate in (here, *here.parents):
+        env_file = candidate / ".env"
+        if env_file.is_file():
+            load_dotenv(env_file, override=False)
+            return
+
+
+def _course_structured(prompt: str, instructions: str):
+    """Use helpers.llm_call when this file is running inside the course repo."""
+    here = Path(__file__).resolve()
+    for candidate in (here, *here.parents):
+        if (candidate / "pyproject.toml").is_file() and (candidate / "helpers").is_dir():
+            root = str(candidate)
+            if root not in sys.path:
+                sys.path.insert(0, root)
+            break
+    else:
+        return None
+    from helpers.llm_call import structured
+
+    return structured(prompt, TargetEvaluation, instructions=instructions)
+
+
+def _litellm_structured(prompt: str, instructions: str):
+    """Call the model from LLM_MODEL when helpers/ is not in this deploy."""
+    import litellm
+
+    model = os.environ.get("LLM_MODEL", "").strip()
+    if not model:
+        raise RuntimeError(
+            "LLM_MODEL is missing. On Render, set it as an environment variable."
+        )
+    response = litellm.completion(
+        model=model,
+        messages=[
+            {"role": "system", "content": instructions},
+            {"role": "user", "content": prompt},
+        ],
+        response_format=TargetEvaluation,
+    )
+    content = response.choices[0].message.content or ""
+    return TargetEvaluation.model_validate_json(content)
+
+
 def evaluate(text: str) -> dict:
     """Return company_name, industry, summary, recommendation, and reason."""
+    _load_local_env()
     excerpt = text[:MAX_CHARS]
-    result = structured(
-        f"Company document:\n\n{excerpt}",
-        TargetEvaluation,
-        instructions=INSTRUCTIONS,
-    )
+    prompt = f"Company document:\n\n{excerpt}"
+    result = _course_structured(prompt, INSTRUCTIONS)
+    if result is None:
+        result = _litellm_structured(prompt, INSTRUCTIONS)
     return result.model_dump()
 
 

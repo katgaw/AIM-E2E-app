@@ -136,12 +136,12 @@ The task for each step is in [individual_tasks](individual_tasks).
 
 GitHub does not copy the database. Render starts with an empty Postgres. `init_db.py` creates the `targets` table and inserts three sample companies. A second run leaves those rows as they are.
 
-This app is the FastAPI server in `app/backend/STEP5_run_backend.py`, not Streamlit. In the Render web service, leave **Root Directory** blank so the repo root is included. The model call imports `helpers/` from that root.
+This app is the FastAPI server in `app/backend/STEP5_run_backend.py`, not Streamlit. In the Render web service, leave **Root Directory** blank. In the GitHub repo `AIM-E2E-app`, `init_db.py` and `requirements.txt` sit at the repo root, so the commands have no `17_E2E_Application/` prefix.
 
 | Setting | Value |
 | --- | --- |
-| Build Command | `pip install -r 17_E2E_Application/requirements.txt` |
-| Start Command | `python 17_E2E_Application/init_db.py && python 17_E2E_Application/app/backend/STEP5_run_backend.py` |
+| Build Command | `pip install -r requirements.txt` |
+| Start Command | `python init_db.py && python app/backend/STEP5_run_backend.py` |
 | `DATABASE_URL` | The internal Postgres URL from the Render database |
 | `PYTHON_VERSION` | `3.12.10` |
 | `LLM_MODEL` | The same model name as in the repo-root `.env` |

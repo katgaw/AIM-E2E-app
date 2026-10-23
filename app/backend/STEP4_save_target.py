@@ -22,28 +22,33 @@ class DatabaseError(Exception):
     """Postgres could not be reached or the write failed. The message is safe to show."""
 
 
-def _repo_root() -> Path:
-    """The directory that contains both pyproject.toml and helpers/."""
+def _load_local_env() -> None:
+    """Fill in variables from a .env file when one exists.
+
+    Render sets DATABASE_URL in the environment and has no .env file. A missing
+    file is normal there. Locally, the file is the repo-root .env, and it only
+    fills variables the environment does not already have.
+    """
+    try:
+        from dotenv import load_dotenv
+    except ModuleNotFoundError:
+        return
     here = Path(__file__).resolve()
     for candidate in (here, *here.parents):
-        if (candidate / "pyproject.toml").is_file() and (candidate / "helpers").is_dir():
-            return candidate
-    raise DatabaseError("Could not find the repo root, so .env could not be loaded.")
+        env_file = candidate / ".env"
+        if env_file.is_file():
+            load_dotenv(env_file, override=False)
+            return
 
 
 def database_url() -> str:
-    """The Postgres URL from the repo-root .env. Nothing else is used to connect."""
-    env_file = _repo_root() / ".env"
-    try:
-        from dotenv import load_dotenv
-
-        load_dotenv(env_file, override=True)
-    except ModuleNotFoundError:
-        pass
+    """The Postgres URL. The environment wins, then a local .env file."""
+    _load_local_env()
     url = os.environ.get("DATABASE_URL", "").strip()
     if not url:
         raise DatabaseError(
-            "DATABASE_URL is missing. Add it to the repo-root .env and try again."
+            "DATABASE_URL is missing. On Render, set it as an environment variable. "
+            "Locally, put it in the repo-root .env."
         )
     return url
 
@@ -54,8 +59,7 @@ def connect() -> psycopg.Connection:
         return psycopg.connect(database_url(), row_factory=dict_row)
     except psycopg.OperationalError as exc:
         raise DatabaseError(
-            "Could not reach the database. Check DATABASE_URL in the repo-root .env "
-            "and that Postgres is running."
+            "Could not reach the database. Check DATABASE_URL and that Postgres is running."
         ) from exc
 
 
