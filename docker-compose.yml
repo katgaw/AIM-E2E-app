@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16
+    container_name: pe-targets-db
+    environment:
+      POSTGRES_USER: pe
+      POSTGRES_PASSWORD: pe
+      POSTGRES_DB: targets
+    ports:
+      - "5433:5432"
+    volumes:
+      - pe-targets-data:/var/lib/postgresql/data
+      - ./app/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+
+volumes:
+  pe-targets-data:

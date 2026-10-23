@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acquisition targets</title>
+  <style>
+    :root {
+      --ink: #1c1915;
+      --muted: #6d675e;
+      --line: #e6e0d6;
+      --paper: #fffcf7;
+      --desk: #f3efe7;
+      --navy: #1b3348;
+      --navy-deep: #122433;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        radial-gradient(900px 420px at 10% -10%, #fff 0%, transparent 55%),
+        var(--desk);
+      font-family: "Avenir Next", "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 36px 22px 72px;
+    }
+    .eyebrow {
+      margin: 0 0 8px;
+      color: var(--navy);
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+    }
+    h1 {
+      margin: 0;
+      font-family: "Iowan Old Style", Palatino, Georgia, serif;
+      font-size: 44px;
+      font-weight: 600;
+      letter-spacing: -0.03em;
+      line-height: 1.05;
+    }
+    .lede {
+      margin: 12px 0 0;
+      color: var(--muted);
+      font-size: 17px;
+    }
+    .panel {
+      margin-top: 28px;
+      padding: 18px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      box-shadow: 0 1px 0 rgba(28, 25, 21, 0.04), 0 18px 40px rgba(28, 25, 21, 0.05);
+    }
+    .drop {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      min-height: 92px;
+      padding: 18px 18px;
+      border: 1.5px dashed #d3cbbd;
+      border-radius: 14px;
+      background: #faf7f2;
+      cursor: pointer;
+    }
+    .drop:hover { border-color: #8ea0b0; background: #f7f4ee; }
+    .has-file .drop { border-style: solid; border-color: #c5d0da; background: #f4f7f8; }
+    .busy .drop { opacity: 0.6; pointer-events: none; }
+    .drop input {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+    }
+    .drop-copy { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .drop-title {
+      font-weight: 650;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .drop-hint { color: var(--muted); font-size: 13px; }
+    .pdf-mark {
+      flex: none;
+      width: 42px;
+      height: 42px;
+      border-radius: 10px;
+      background: var(--navy);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      display: grid;
+      place-items: center;
+    }
+    .actions {
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-top: 14px;
+    }
+    button {
+      flex: none;
+      height: 42px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 10px;
+      background: var(--navy);
+      color: #fff;
+      font: inherit;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    button:hover { background: var(--navy-deep); }
+    button:disabled { opacity: 0.55; cursor: wait; }
+    .error {
+      flex: 1;
+      margin: 0;
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #fbeeee;
+      color: #8d2e2e;
+      font-size: 14px;
+    }
+    .error:empty { display: none; }
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin: 34px 0 12px;
+    }
+    h2 {
+      margin: 0;
+      font-family: "Iowan Old Style", Palatino, Georgia, serif;
+      font-size: 26px;
+      font-weight: 600;
+    }
+    #count {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+      letter-spacing: 0.04em;
+    }
+    #count:empty { display: none; }
+    .empty {
+      padding: 28px 22px;
+      border: 1px dashed #d3cbbd;
+      border-radius: 16px;
+      background: rgba(255, 252, 247, 0.7);
+      text-align: center;
+    }
+    .empty-title {
+      margin: 0 0 4px;
+      font-weight: 650;
+    }
+    .empty p:last-child { margin: 0; color: var(--muted); }
+    .card {
+      margin-bottom: 12px;
+      padding: 18px 20px 16px;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-left: 4px solid #c8c0b4;
+      border-radius: 16px;
+      box-shadow: 0 10px 24px rgba(28, 25, 21, 0.04);
+      overflow: hidden;
+    }
+    .card.look { border-left-color: #2f7d52; }
+    .card.pass { border-left-color: #a24b4b; }
+    .card.more { border-left-color: #b5812f; }
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .name {
+      margin: 0;
+      font-family: "Iowan Old Style", Palatino, Georgia, serif;
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+    }
+    .meta { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+    .tag {
+      flex: none;
+      margin-top: 2px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    .tag.look { color: #1d5c38; background: #e5f5eb; }
+    .tag.pass { color: #8a3333; background: #f8e8e8; }
+    .tag.more { color: #8a5a12; background: #f8f0df; }
+    .summary { margin: 14px 0 0; }
+    .why {
+      margin: 12px 0 0;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: #f6f3ed;
+    }
+    .why strong {
+      display: block;
+      margin-bottom: 2px;
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+    .card-foot {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 14px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+    .file {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-family: ui-monospace, "SFMono-Regular", Menlo, monospace;
+    }
+    @media (max-width: 640px) {
+      h1 { font-size: 34px; }
+      .drop { align-items: flex-start; }
+      .card-top, .actions, .card-foot { flex-direction: column; align-items: stretch; }
+      .actions { align-items: stretch; }
+      button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <p class="eyebrow">First look</p>
+    <h1>Acquisition targets</h1>
+    <p class="lede">Upload a company PDF. We save it and write a short first look.</p>
+
+    <form id="upload" class="panel">
+      <label class="drop" for="pdf">
+        <span class="drop-copy">
+          <span class="drop-title" id="filename">Choose a company PDF</span>
+          <span class="drop-hint">A teaser, a one-pager, or a few CIM pages</span>
+        </span>
+        <span class="pdf-mark">PDF</span>
+        <input id="pdf" type="file" accept="application/pdf,.pdf">
+      </label>
+      <div class="actions">
+        <p id="error" class="error" role="alert"></p>
+        <button id="evaluate" type="submit">Evaluate</button>
+      </div>
+    </form>
+
+    <div class="section-head">
+      <h2>Saved targets</h2>
+      <span id="count"></span>
+    </div>
+    <div id="targets"></div>
+  </main>
+  <script src="app.js"></script>
+</body>
+</html>
